@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0a0612">
+<title>Ich hab noch nie</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🙈</text></svg>">
+</head>
+<body>
+
+<div id="status"></div>
+<div id="toast"></div>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="screen-home" class="screen active">
+  <div class="home">
+    <h1 class="logo">ICH HAB<span>NOCH NIE</span></h1>
+    <p class="tag">Einer gesteht, der Rest wird ertappt.</p>
+
+    <label class="field-label" for="name">Dein Name</label>
+    <input id="name" maxlength="12" placeholder="z.&nbsp;B. Mo" autocomplete="nickname">
+
+    <div class="setting">
+      <span class="setting-label">Karten</span>
+      <div class="segmented">
+        <button class="seg sel" data-modus="harmlos">Harmlos</button>
+        <button class="seg" data-modus="gemischt">Gemischt</button>
+        <button class="seg" data-modus="ab18">Nur 18+</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <span class="setting-label">Sichtbar</span>
+      <div class="segmented">
+        <button class="seg sel" data-vis="public">Öffentlich</button>
+        <button class="seg" data-vis="private">Privat</button>
+      </div>
+    </div>
+    <button id="createBtn" class="btn primary big">Raum eröffnen</button>
+
+    <div class="or"><span>oder beitreten</span></div>
+
+    <div class="rooms-head">Offene Räume <span id="roomsCount"></span></div>
+    <div id="roomList" class="roomlist"></div>
+
+    <div class="joinrow">
+      <input id="codeInput" maxlength="5" placeholder="CODE" autocapitalize="characters"
+             autocomplete="off" spellcheck="false">
+      <button id="joinBtn" class="btn">Mit Code</button>
+    </div>
+
+    <button id="helpBtn" class="btn ghost small">Wie geht das?</button>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="screen-lobby" class="screen">
+  <div class="lobby">
+    <div class="codebox">
+      <span class="codebox-label">Raumcode</span>
+      <strong id="roomCode">····</strong>
+      <span id="roomVis" class="codebox-vis"></span>
+      <button id="copyBtn" class="btn ghost small">Link kopieren</button>
+    </div>
+
+    <div class="lobby-head">
+      <h2>Spieler <span id="lobbyCount">1/8</span></h2>
+    </div>
+    <div id="playerList" class="seats"></div>
+
+    <div id="hostControls" hidden>
+      <div class="setting">
+        <span class="setting-label">Karten</span>
+        <div class="segmented">
+          <button class="seg" data-lobbymodus="harmlos">Harmlos</button>
+          <button class="seg" data-lobbymodus="gemischt">Gemischt</button>
+          <button class="seg" data-lobbymodus="ab18">Nur 18+</button>
+        </div>
+      </div>
+      <div class="setting">
+        <span class="setting-label">Wer dran ist</span>
+        <div class="segmented">
+          <button class="seg" data-wahl="zufall">Zufall</button>
+          <button class="seg" data-wahl="reihum">Reihum</button>
+        </div>
+      </div>
+      <div class="setting">
+        <span class="setting-label">Runden</span>
+        <div class="segmented">
+          <button class="seg" data-rounds="8">8</button>
+          <button class="seg" data-rounds="12">12</button>
+          <button class="seg" data-rounds="20">20</button>
+          <button class="seg" data-rounds="0">∞</button>
+        </div>
+      </div>
+      <div class="setting">
+        <span class="setting-label">Sichtbar</span>
+        <div class="segmented">
+          <button class="seg" data-lobbyvis="public">Öffentlich</button>
+          <button class="seg" data-lobbyvis="private">Privat</button>
+        </div>
+      </div>
+      <button id="startBtn" class="btn primary big">Runde starten</button>
+      <p id="startHint" class="hintline"></p>
+    </div>
+
+    <div id="guestControls" hidden>
+      <button id="readyBtn" class="btn big">Bereit!</button>
+      <p class="hintline">Der Host startet, sobald alle bereit sind.</p>
+    </div>
+
+    <button id="leaveBtn" class="btn ghost small">Raum verlassen</button>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="screen-game" class="screen">
+  <div class="game">
+    <header class="topbar">
+      <div class="tb-runde">Runde <strong id="rundeNo">1</strong><small id="rundeTotal"></small></div>
+      <div id="modusTag" class="tb-modus"></div>
+      <button id="endeBtn" class="btn ghost sm" hidden>Beenden</button>
+    </header>
+
+    <main class="buehne">
+      <div class="dran">
+        <div class="dran-av" id="dranAv">🙈</div>
+        <div class="dran-name" id="dranName">—</div>
+        <div class="dran-rolle" id="dranRolle"></div>
+      </div>
+
+      <div class="karte" id="karte">
+        <span class="karte-kopf">Ich hab noch nie …</span>
+        <p class="karte-text" id="karteText"></p>
+        <span class="karte-tag" id="karteTag" hidden>18+</span>
+      </div>
+
+      <p id="stimmenZahl" class="stimmen-zahl"></p>
+      <ul id="ergebnisListe" class="ergebnis"></ul>
+    </main>
+
+    <footer class="fussbereich">
+      <div id="aktionen" class="aktionen"></div>
+      <p id="rundenHint" class="hintline"></p>
+      <div id="punktleiste" class="punktleiste"></div>
+    </footer>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section id="screen-final" class="screen">
+  <div class="final">
+    <h2 class="final-title">Endstand</h2>
+    <p id="finalSub" class="hintline"></p>
+    <ol id="podium" class="podium"></ol>
+    <button id="againBtn" class="btn big">Nochmal!</button>
+    <p id="againHint" class="hintline">Der Host holt alle zurück in den Warteraum.</p>
+  </div>
+</section>
+
+<!-- 18+-Abfrage. Keine echte Schranke – aber der Unterschied zwischen
+     „aus Versehen" und „bewusst" soll dokumentiert sein. -->
+<div id="ab18Gate" hidden>
+  <div class="gate-inner">
+    <h2>🔞 Karten ab 18</h2>
+    <p id="ab18Text">Dieser Modus enthält Karten rund um Alkohol, Feiern und Sex.
+       Nur weiterspielen, wenn alle am Tisch volljährig sind und Lust darauf haben.</p>
+    <p class="gate-klein">Jede Karte darf man auslassen. Niemand muss antworten,
+       und niemand muss trinken.</p>
+    <button id="ab18Ja" class="btn primary big">Ich bin 18 oder älter</button>
+    <button id="ab18Nein" class="btn ghost">Lieber harmlos</button>
+  </div>
+</div>
+
+<div id="help" hidden>
+  <div class="help-inner">
+    <h2>So läuft das</h2>
+    <ul>
+      <li><b>Ihr sitzt zusammen</b> – am Tisch, auf dem Sofa, im Videocall.
+          Jeder hat sein eigenes Handy offen.</li>
+      <li><b>Jede Runde wird eine Person ausgesucht.</b> Sie sagt laut einen Satz,
+          der mit „Ich hab noch nie …" anfängt – und der für sie stimmt.</li>
+      <li><b>Fällt ihr nichts ein,</b> drückt sie auf <i>Mir fällt nichts ein</i>
+          und bekommt eine Karte. Die sehen dann alle.</li>
+      <li><b>Alle anderen stimmen ab:</b> <i>Hab ich schon</i> oder <i>Noch nie</i>.
+          Erst wenn alle gedrückt haben, wird aufgelöst – so schielt niemand.</li>
+      <li><b>Wer erwischt wurde,</b> trinkt einen Schluck. Oder erzählt die
+          Geschichte dazu. Oder gar nichts – das entscheidet ihr.</li>
+      <li><b>Am Ende</b> steht, wer am häufigsten ertappt wurde und wer
+          erstaunlich sauber geblieben ist.</li>
+      <li><b>Karten:</b> <i>Harmlos</i> geht überall, <i>18+</i> nicht. Der Host
+          stellt es ein, alle sehen im Warteraum, was gespielt wird.</li>
+    </ul>
+    <button id="helpClose" class="btn">Alles klar</button>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
