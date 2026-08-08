@@ -1,9 +1,10 @@
 /* ══════════════ Gemeinsame Lobby-Basis ══════════════ Anfang ═══════════════
-   Identisch in Keep, Card Chaos, Lucky Reflex und Seconds. Wer hier etwas
-   ändert, ändert es in allen vier – der Block wird von Hand synchron gehalten,
-   es gibt bewusst keinen Build-Schritt.
+   ERZEUGT – NICHT HIER ÄNDERN. Quelle: /var/www/html/gemeinsam/lobby.css
+   Ändern, dann `node werkzeug/verteilen.mjs` – das schreibt diesen Block in
+   jedes Spiel. `--pruefen` meldet, wo er abgewichen ist.
 
-   --akzent/--akzent2 setzt jedes Spiel darunter selbst; alles andere ist gleich.
+   --akzent/--akzent2 setzt jedes Spiel unterhalb des Endmarkers selbst;
+   alles davon oberhalb ist in allen Spielen gleich.
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {

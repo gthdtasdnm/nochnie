@@ -1,8 +1,9 @@
 // ══════════════ Gemeinsame Bremse ══════════════ Anfang ═══════════════════
-// Identisch in Keep, Card Chaos, Lucky Reflex und Seconds. Wer hier etwas
-// aendert, aendert es in allen vier - die Datei wird von Hand synchron
-// gehalten, genau wie der gemeinsame CSS-Block. Kein Build-Schritt, keine
-// Abhaengigkeit.
+// ERZEUGT - NICHT HIER AENDERN. Quelle: /var/www/html/gemeinsam/bremse.js
+// Aendern, dann `node werkzeug/verteilen.mjs` - das schreibt die Datei in
+// jedes Spiel. `--pruefen` meldet, wo sie abgewichen ist. Kein Build-Schritt,
+// keine Abhaengigkeit: jedes Spiel behaelt seine eigene vollstaendige Kopie
+// und laeuft ohne diesen Ordner weiter.
 //
 // Zweck: verhindern, dass eine einzelne Gegenstelle den Server mit
 // Verbindungen oder Raeumen zumuellt. Das ist kein Schutz gegen einen echten
