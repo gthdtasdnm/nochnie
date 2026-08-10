@@ -59,10 +59,23 @@ function newCode() {
 
 const token = () => crypto.randomUUID();
 
+/** Einmal anlegen, nicht bei jedem Namen neu - das Ding ist teuer. */
+const ZEICHEN = new Intl.Segmenter("de", { granularity: "grapheme" });
+
 function cleanName(raw) {
   // Steuerzeichen raus, sonst zerlegt ein Zeilenumbruch im Namen das Layout.
   const s = String(raw ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim();
-  return s.slice(0, 12) || "Spieler";
+  // Nach *Zeichen* kuerzen, nicht nach Code-Einheiten. `s.slice(0, 12)` zaehlt
+  // UTF-16-Einheiten, und ein Emoji besteht aus zweien: abgeschnitten wurde
+  // mitten im Zeichen, und im Raum stand ein Ersatzzeichen. Zweite Grenze bei
+  // 48 Code-Einheiten gegen gestapelte Kombinationszeichen - abgebrochen wird
+  // zwischen zwei Zeichen, nie mittendrin. Gleiche Fassung wie in raum.js.
+  let kurz = "";
+  for (const z of [...ZEICHEN.segment(s)].slice(0, 12)) {
+    if (kurz.length + z.segment.length > 48) break;
+    kurz += z.segment;
+  }
+  return kurz || "Spieler";
 }
 
 function shuffle(list) {

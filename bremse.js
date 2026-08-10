@@ -11,9 +11,24 @@
 // billige Variante (ein Skript, eine Leitung) aber wirkungslos.
 // ──────────────────────────────────────────────────────────────────────────
 
-/** Gleichzeitig offene Verbindungen je IP. Vier Leute an einem Anschluss
- *  plus Neuladen und ein zweiter Tab passen bequem hinein. */
-const MAX_GLEICHZEITIG = 12;
+/**
+ * Gleichzeitig offene Verbindungen je IP.
+ *
+ * Der Wert stand auf 12, und das war zu knapp: **eine Party sitzt an einem
+ * Anschluss.** Ein Abend Werwolf zu zwoelft ist ein Wohnzimmer, ein WLAN, eine
+ * IP - und Werwolf hat genau zwoelf Plaetze. Nachgemessen (grenzprobe.mjs,
+ * G01): zwoelf Leute kamen gerade noch hinein und hatten danach *null*
+ * Spielraum. Wer neu laedt, haelt fuer einen Moment zwei Verbindungen; der
+ * Dreizehnte bekam 429 und sah nur "Verbindung weg". Imposter, Wer am ehesten
+ * und Flaschendrehen haben zehn Plaetze - dort blieben zwei uebrig.
+ *
+ * 24 gibt derselben Zwoelfer-Runde zwoelf Verbindungen Luft. Die Bremse soll
+ * ein Flut-Skript aufhalten, nicht eine Party, und gegen ein Skript ist der
+ * Unterschied zwischen 12 und 24 offenen Verbindungen ohnehin keiner - das
+ * schafft schon eine einzelne Leitung. Wirksam gegen Missbrauch sind die
+ * beiden Zaehler darunter, und die bleiben, wie sie sind.
+ */
+const MAX_GLEICHZEITIG = 24;
 
 /** Neue Verbindungen je IP und Minute. Wiederverbinden nach Netzwechsel
  *  darf nicht dagegenlaufen, Dauerfeuer schon. */
