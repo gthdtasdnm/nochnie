@@ -208,6 +208,31 @@ input:focus, select:focus {
 .seat .host { font-size: 11px; color: var(--gold); letter-spacing: .1em; }
 .seat.empty { border-style: dashed; opacity: .4; }
 
+/* ── Tippen statt Zoomen ─────────────────────────────────────────────────
+   `user-scalable=no` im Viewport steht in jedem Spiel – und iOS Safari hält
+   sich seit Version 10 nicht mehr daran. Der Doppeltipp-Zoom bleibt damit an,
+   und mit ihm die Wartezeit: der Browser hält jeden Tipp erst zurück, um zu
+   sehen, ob ein zweiter folgt. Wer schnell hintereinander tippt – und genau
+   das tut man in einem Spiel –, dessen zweiter Tipp verschwindet dann im
+   Zoomversuch. „Am Handy geht es manchmal nicht, Karten lassen sich nicht
+   anklicken" (Bugreport 13).
+
+   `manipulation` schaltet genau diese Gesten ab und lässt Scrollen und
+   Aufziehen in Ruhe. */
+html, body, button, .btn, .seat, .roomrow, .seg { touch-action: manipulation; }
+
+/* ── Der Weg zurück ──────────────────────────────────────────────────────
+   Jeder Bildschirm braucht einen sichtbaren Ausgang: von der Startseite eines
+   Spiels zur Übersicht, aus Runde und Endstand aus dem Raum. Vorher hatten nur
+   die fünf Spiele ohne Lobby einen solchen Link, und aus dem Spielbildschirm
+   führte für alle ausser dem Host gar nichts heraus – Bugreport 10. */
+.zurueckzeile { text-align: center; margin-top: 12px; }
+.zurueck {
+  display: inline-block; padding: 6px 4px;
+  color: var(--muted); font-size: 13px; text-decoration: none;
+}
+.zurueck:hover { color: var(--ink); }
+
 @media (prefers-reduced-motion: reduce) {
   .btn, .roomrow, .seat { transition: none; }
   /* Auch Einblend-Animationen aus: sie starten bei opacity 0, und wer
