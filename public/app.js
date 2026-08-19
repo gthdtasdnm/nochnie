@@ -139,6 +139,13 @@ function connect() {
   };
 }
 
+// Lebenszeichen alle 25 s. Der Server schließt jede Verbindung, die 65 s lang
+// schweigt (die Geisterwache in `server.js`) – wer eine Weile nur zusieht und
+// nichts drückt, flog dadurch mitten im Spiel aus dem Raum. Gleicher Takt wie
+// in `gemeinsam/schale.js`; dieser Client hat die Schale nicht und schickt den
+// Ping selbst.
+setInterval(() => send({ t: "ping", c: Date.now() }), 25000);
+
 // ---------------------------------------------------------------------------
 // Bildschirme
 // ---------------------------------------------------------------------------
