@@ -242,6 +242,41 @@ html, body, button, .btn, .seat, .roomrow, .seg { touch-action: manipulation; }
   .screen, .screen.on { animation: none !important; }
 }
 
+
+/* --- Sprachwahl ---------------------------------------------------------- */
+/* Der Umschalter wird von sprache.js gefuellt und bleibt ohne JavaScript leer
+   – deshalb :empty, sonst stuende dort ein leerer Kasten. Er steht auf dem
+   Startbildschirm: gewaehlt wird vor dem Spielen, und die Wahl gilt
+   geraeteweit fuer alle Spiele. */
+.sprachwahl {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  margin: 10px auto 0;
+  width: fit-content;
+  border: 1px solid var(--linie, rgba(255, 255, 255, .14));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .04);
+}
+.sprachwahl:empty { display: none; }
+
+.sprachknopf {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 5px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--leise, #9c8fc2);
+  cursor: pointer;
+  transition: color .18s ease, background .18s ease;
+}
+.sprachknopf:hover { color: #fff; }
+.sprachknopf.sel { background: rgba(255, 255, 255, .12); color: #fff; }
+.sprachknopf:focus-visible { outline: 2px solid var(--akzent, #52ffa8); outline-offset: 2px; }
+
 /* ══════════════ Gemeinsame Lobby-Basis ══════════════ Ende ═════════════════ */
 
 /* Ich hab noch nie: eigener Akzent. Alles darüber ist der gemeinsame Block. */
