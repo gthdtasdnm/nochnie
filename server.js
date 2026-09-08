@@ -24,15 +24,40 @@ const PUBLIC = new URL("./public/", import.meta.url);
 // Acht statt vier wie in den anderen Spielen: hier sitzt niemand vor einer
 // Spielfläche, sondern alle um einen Tisch. Zu viert ist eine Runde in zwei
 // Minuten durch.
+/**
+ * Fristen aus der Umgebung, sonst die Vorgabe. Die Variablen sind nicht für den
+ * Betrieb da, sondern damit `werkzeug/lobbyprobe.mjs` einen Fall in Sekunden
+ * statt in Minuten prüfen kann.
+ */
+function frist(name, vorgabe) {
+  try {
+    const n = Number(Deno.env.get(name));
+    if (Number.isFinite(n) && n >= 200) return n;
+  } catch { /* ohne --allow-env: dann eben die Vorgabe */ }
+  return vorgabe;
+}
+
 const MAX_PLAYERS = 8;
 const MIN_PLAYERS = 2;
 
-// Gleiche Werte und gleiche Regel wie in den anderen vier Spielen:
-// ROOM_IDLE_MS ist der Puffer fürs Link-Teilen (dafür muss man den Tab
-// verlassen, und auf dem Handy stirbt dabei der Socket), SEAT_GRACE_MS hält
-// einen Platz nur während einer laufenden Partie frei.
-const ROOM_IDLE_MS = 5 * 60_000;
-const SEAT_GRACE_MS = 60_000;
+// Wie lange jemand weg sein darf.
+//
+// Wer sein Handy weglegt, den Bildschirm sperrt oder zwischendurch etwas
+// anderes macht, ist die Regel und nicht die Ausnahme – und jedes Mal, wenn so
+// jemand als *neuer* Spieler zurückkam, spann der ganze Tisch: der Platz war
+// weg, das Hostzeichen woanders, die Runde durcheinander. Deshalb bleibt der
+// Platz reserviert, und zwar so lange, dass eine Zigarette, ein Anruf oder ein
+// leerer Akku ihn nicht kostet.
+//
+// Endgültig geht nur, wer selbst auf „Verlassen" tippt. Gleiche Werte wie in
+// `gemeinsam/raum.js`; die Umgebungsvariablen sind nur für `lobbyprobe.mjs` da.
+const ROOM_IDLE_MS = frist("RAUM_MS", 30 * 60_000);   // leerer Raum
+const SEAT_GRACE_MS = frist("SITZ_MS", 20 * 60_000);  // Platz in der Runde
+const LOBBY_GRACE_MS = frist("LOBBY_MS", 5 * 60_000); // Platz im Warteraum
+// Das Hostzeichen ist die eine Ausnahme: es muss wandern, sonst kann niemand
+// mehr starten. Aber nicht sofort – eine Dreiviertelminute lang wartet der
+// Tisch lieber, als dass das Zeichen bei jedem gesperrten Bildschirm springt.
+const HOST_GRACE_MS = frist("HOST_MS", 45_000);
 
 const RUNDEN_OPTIONEN = [8, 12, 20, 0]; // 0 = ohne festes Ende
 
@@ -101,6 +126,7 @@ function createRoom(isPublic) {
     aktuell: null,
     timers: new Set(),
     idleTimer: null,
+    hostTimer: null,
     lastActivity: Date.now(),
   };
   rooms.set(room.code, room);
@@ -130,6 +156,7 @@ function clearTimers(room) {
 function destroyRoom(room) {
   clearTimers(room);
   cancelIdleClose(room);
+  cancelHostWacht(room);
   for (const p of room.players.values()) {
     if (p.dropTimer) clearTimeout(p.dropTimer);
   }
@@ -137,16 +164,46 @@ function destroyRoom(room) {
   pushRoomList();
 }
 
+function cancelHostWacht(room) {
+  if (room.hostTimer) { clearTimeout(room.hostTimer); room.hostTimer = null; }
+}
+
 /**
- * Der Host ist immer jemand, der auch da ist. Geht er raus oder ist seine
- * Verbindung weg, rückt der nächste Anwesende nach.
+ * Der Host ist weg, hat aber noch einen Platz. Sein Zeichen wandert erst nach
+ * `HOST_GRACE_MS` weiter – vorher gilt er als jemand, der kurz aufs Klo ist.
+ * Ist er vorher zurück, hat der Tisch nichts gemerkt.
+ *
+ * Ohne diese Uhr sprang das Zeichen bei jedem gesperrten Bildschirm, und wer
+ * zurückkam, fand seine Runde in fremder Hand.
+ */
+function hostWacht(room) {
+  if (room.hostTimer) return;
+  room.hostTimer = setTimeout(() => {
+    room.hostTimer = null;
+    if (room.players.get(room.hostId)?.connected) return;
+    const naechster = anwesende(room)[0];
+    // Niemand da, der übernehmen könnte: das Zeichen bleibt liegen, wo es ist.
+    // Der Nächste, der hereinkommt, startet die Uhr erneut.
+    if (!naechster) return;
+    room.hostId = naechster.id;
+    pushState(room);
+    pushRoomList();
+  }, HOST_GRACE_MS);
+}
+
+/**
+ * Der Host ist immer jemand, der auch da ist – aber nicht sofort. Solange sein
+ * Platz steht, behält ein nur abwesender Host sein Zeichen; erst die Uhr oben
+ * gibt es weiter.
  */
 function ensureHost(room) {
   const current = room.players.get(room.hostId);
-  if (current?.connected) return;
+  if (current?.connected) { cancelHostWacht(room); return; }
+  if (current) { hostWacht(room); return; }
   const all = [...room.players.values()];
   const next = all.find((p) => p.connected) ?? all[0];
   room.hostId = next ? next.id : null;
+  cancelHostWacht(room);
 }
 
 const anwesende = (room) => [...room.players.values()].filter((p) => p.connected);
@@ -671,9 +728,19 @@ function dropPlayer(ws, { immediate = false } = {}) {
 
   player.connected = false;
   player.ws = null;
-  player.ready = false;
+  // `ready` bleibt stehen, solange der Platz steht: wer im Warteraum kurz das
+  // Netz verliert, hat sich deshalb nicht anders entschieden – musste aber
+  // früher nach der Rückkehr noch einmal auf „Bereit" tippen, und bis dahin
+  // war der Startknopf des Hosts gesperrt.
+  if (immediate) player.ready = false;
 
-  if (immediate || room.phase === "lobby") {
+  // Endgültig geht nur, wer selbst auf „Verlassen" getippt hat. Alles andere –
+  // gesperrter Bildschirm, weggewischter Tab, Funkloch, leerer Akku – ist eine
+  // Pause, und eine Pause kostet den Platz nicht. Früher gab der Warteraum ihn
+  // sofort frei; wer wiederkam, saß auf einem neuen Platz und der Host
+  // womöglich woanders.
+  const gnade = room.phase === "lobby" ? LOBBY_GRACE_MS : SEAT_GRACE_MS;
+  if (immediate || gnade <= 0) {
     releaseSeat(room, player.id);
     return;
   }
@@ -681,9 +748,12 @@ function dropPlayer(ws, { immediate = false } = {}) {
   if (player.dropTimer) clearTimeout(player.dropTimer);
   // Nicht über later(): die Rundentimer werden bei jedem Übergang geleert,
   // dieser hier darf das nicht mitmachen.
-  player.dropTimer = setTimeout(() => releaseSeat(room, player.id), SEAT_GRACE_MS);
+  player.dropTimer = setTimeout(() => releaseSeat(room, player.id), gnade);
 
   ensureHost(room);
+  // Ist niemand mehr da, fängt die Uhr des leeren Raums an zu laufen. Sie
+  // wird abgeräumt, sobald der Erste zurück ist.
+  if (!anwesende(room).length) scheduleIdleClose(room);
   pushState(room);
   // Wer weg ist, stimmt nicht mehr ab – sonst wartet die Runde ewig auf ihn.
   pruefeStimmen(room);
@@ -819,6 +889,24 @@ setInterval(() => {
 }, 60_000);
 
 
+// Sicherheitsnetz gegen liegengebliebene Räume – etwa wenn ein Timer beim
+// Neustart des Dienstes verlorenging. Es darf niemandem den Platz wegnehmen,
+// deshalb die großzügige Grenze: erst wenn selbst ein reservierter Platz
+// längst abgelaufen wäre, ist der Raum wirklich tot.
+const RAUM_TOT_MS = ROOM_IDLE_MS + SEAT_GRACE_MS;
+
+setInterval(() => {
+  const jetzt = Date.now();
+  for (const room of [...rooms.values()]) {
+    if (anwesende(room).length) continue;
+    const zuletzt = Math.max(
+      room.lastActivity ?? 0,
+      ...[...room.players.values()].map((p) => p.lastSeen ?? 0),
+    );
+    if (jetzt - zuletzt > RAUM_TOT_MS) destroyRoom(room);
+  }
+}, 60_000);
+
 /**
  * Die Geisterwache. Gleiche Regel wie in `gemeinsam/raum.js`, hier von Hand:
  * ein Socket, der offen aussieht und keiner mehr ist, ist auf dem Handy der
@@ -827,14 +915,15 @@ setInterval(() => {
  * Startknopf, den niemand mehr druecken kann (Bugreport 4).
  *
  * `connected` allein ist deshalb kein Nachweis. Der Client meldet sich alle
- * 25 s mit `ping`, auch wenn niemand spielt; jede eingehende Nachricht
- * stempelt `lastSeen`. Wer zwei Pings lang schweigt, wird behandelt wie einer,
- * dessen Verbindung ordentlich zuging.
+ * 20 s mit `ping`, auch wenn niemand spielt; jede eingehende Nachricht
+ * stempelt `lastSeen`.
+ *
+ * Die Wache stellt nur fest, dass eine Verbindung tot ist – sie wirft
+ * niemanden aus dem Raum. Der Platz geht in dieselbe Karenzzeit wie bei einem
+ * sauber geschlossenen Socket. Und sie lässt sich Zeit damit: 180 s statt der
+ * früheren 65 s, das sind neun ausgefallene Pings statt zwei.
  */
-const GEIST_MS = (() => {
-  const n = Number(Deno.env.get("GEIST_MS"));
-  return Number.isFinite(n) && n >= 1000 ? n : 65_000;
-})();
+const GEIST_MS = frist("GEIST_MS", 180_000);
 
 setInterval(() => {
   const jetzt = Date.now();

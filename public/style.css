@@ -108,6 +108,15 @@ input:focus, select:focus {
 .btn.primary:hover { filter: brightness(1.12); }
 .btn.on { background: linear-gradient(100deg, #1ec98a, var(--good)); color: #04220f; border-color: transparent; }
 .btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+/* Der Verlassenknopf, nachdem er einmal gedrückt wurde: er fragt vier Sekunden
+   lang nach, statt einen Dialog aufzumachen. Nur mitten in der Runde – im
+   Warteraum kostet ein Fehlgriff nichts. Siehe `knopfRaus` in `schale.js`. */
+.btn.fragt {
+  background: var(--bad, #e4396a); border-color: transparent; color: #fff;
+  animation: fragtPuls 1s ease-in-out infinite;
+}
+@keyframes fragtPuls { 50% { filter: brightness(1.25); } }
+@media (prefers-reduced-motion: reduce) { .btn.fragt { animation: none; } }
 
 /* ── Trenner „oder beitreten" ─────────────────────────────────────────── */
 .or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }

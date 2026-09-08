@@ -48,6 +48,7 @@ export const SCHALE_WOERTER = {
     // --- Spielbildschirm und Endstand ---
     "schale.beenden": "Bitir",
     "schale.raus": "Çık",
+    "schale.wirklichRaus": "Gerçekten mi?",
     "schale.endstand": "Sonuç",
     "schale.nochmal": "Bir daha!",
     "schale.zurueckWarteraum": "Oda sahibi herkesi bekleme odasına geri alır.",
@@ -116,6 +117,7 @@ export const SCHALE_WOERTER = {
     // --- Spielbildschirm und Endstand ---
     "schale.beenden": "End",
     "schale.raus": "Leave",
+    "schale.wirklichRaus": "Really leave?",
     "schale.endstand": "Final score",
     "schale.nochmal": "Again!",
     "schale.zurueckWarteraum": "The host brings everyone back to the waiting room.",

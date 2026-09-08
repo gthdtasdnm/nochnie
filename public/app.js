@@ -146,12 +146,12 @@ function connect() {
   };
 }
 
-// Lebenszeichen alle 25 s. Der Server schließt jede Verbindung, die 65 s lang
-// schweigt (die Geisterwache in `server.js`) – wer eine Weile nur zusieht und
-// nichts drückt, flog dadurch mitten im Spiel aus dem Raum. Gleicher Takt wie
-// in `gemeinsam/schale.js`; dieser Client hat die Schale nicht und schickt den
-// Ping selbst.
-setInterval(() => send({ t: "ping", c: Date.now() }), 25000);
+// Lebenszeichen alle 20 s. Der Server räumt Verbindungen ab, die 180 s lang
+// schweigen (die Geisterwache in `server.js`) – das sind neun Pings Luft.
+// Vorher: 25 s Takt gegen 65 s Frist, also zwei; wer eine Weile nur zusah und
+// nichts drückte, flog dadurch mitten im Spiel aus dem Raum. Gleicher Takt wie
+// in `gemeinsam/schale.js`.
+setInterval(() => send({ t: "ping", c: Date.now() }), 20_000);
 
 // ---------------------------------------------------------------------------
 // Bildschirme
@@ -496,11 +496,38 @@ $("readyBtn").addEventListener("click", () => {
 });
 
 $("startBtn").addEventListener("click", () => send({ t: "start" }));
-$("leaveBtn").addEventListener("click", verlassen);
-// Derselbe Weg hinaus von ueberall: Lobby, Spielbildschirm, Endstand.
-for (const b of document.querySelectorAll("[data-raus]")) {
-  b.addEventListener("click", verlassen);
+// Zwei Stufen, aber nur wo es weh tut: im Warteraum kostet ein Fehlgriff
+// nichts, in der laufenden Runde das Blatt. Seit dem 08.09.2026 ist dieser
+// Knopf der einzige Weg, den Platz wirklich aufzugeben – alles andere
+// (weggewischt, gesperrt, Funkloch) hält der Server minutenlang frei. Der
+// Knopf schreibt sich dafür kurz um, statt einen Dialog aufzumachen:
+// `confirm()` blockiert auf dem Handy die ganze Seite, und die Verbindung
+// läuft derweil weiter.
+const BEDENK_MS = 4000;
+
+function knopfRaus(b) {
+  if (!b) return;
+  let scharf = null;
+  const zurueck = () => {
+    clearTimeout(scharf);
+    scharf = null;
+    if (b.dataset.wortlaut != null) b.textContent = b.dataset.wortlaut;
+    b.classList.remove("fragt");
+  };
+  b.addEventListener("click", () => {
+    const raum = state.room;
+    if (!raum || raum.phase === "lobby") return verlassen();
+    if (scharf) { zurueck(); return verlassen(); }
+    b.dataset.wortlaut = b.textContent;
+    b.textContent = t("schale.wirklichRaus", {}, "Wirklich raus?");
+    b.classList.add("fragt");
+    scharf = setTimeout(zurueck, BEDENK_MS);
+  });
 }
+
+knopfRaus($("leaveBtn"));
+// Derselbe Weg hinaus von überall: Lobby, Spielbildschirm, Endstand.
+for (const b of document.querySelectorAll("[data-raus]")) knopfRaus(b);
 
 
 for (const b of document.querySelectorAll("[data-lobbymodus]")) {
